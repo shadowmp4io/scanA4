@@ -202,9 +202,9 @@ html,body{-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-selec
 <div id="toast"></div>
 
 <script>
-const $=s=>document.querySelector(s),vib=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}},N=16;
+const $=s=>document.querySelector(s),vib=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}},N=22;
 const vid=$('#v'),ov=$('#ov'),poly=$('#poly'),dots=$('#dots'),pill=$('#pill'),prog=$('#prog');
-let miss=0,K=.3,lt=0,lastT='',stream,W=0,H=0,quad=null,shown=null,stable=0,auto=true,busy=false,last=0,base=null,mode=1,locked=false;
+let pend=null,jump=0,miss=0,K=.3,lt=0,lastT='',stream,W=0,H=0,quad=null,shown=null,stable=0,auto=true,busy=false,last=0,base=null,mode=1,locked=false;
 const sc=document.createElement('canvas'),sx=sc.getContext('2d',{willReadFrequently:true});
 for(let i=0;i<4;i++)dots.appendChild(document.createElementNS('http://www.w3.org/2000/svg','circle'));
 const go=n=>{$('#cam').classList.toggle('off',n!=='cam');$('#res').classList.toggle('off',n!=='res');$('#ed').classList.toggle('off',n!=='ed')};
@@ -223,7 +223,7 @@ async function start(){
 }
 
 /* Détection : Otsu + plus grande zone claire + 4 coins extrêmes */
-function detect(el,vw,vh,w=160){
+function detect0(el,vw,vh,w,dt){
   const h=Math.round(w*vh/vw),n=w*h;sc.width=w;sc.height=h;
   sx.drawImage(el,0,0,w,h);
   const d=sx.getImageData(0,0,w,h).data,g=new Uint8Array(n),hist=new Float32Array(256);
@@ -233,7 +233,7 @@ function detect(el,vw,vh,w=160){
   let sum=0;for(let i=0;i<256;i++)sum+=i*hist[i];
   let sb=0,wb=0,mx=0,t=128,cm=0;
   for(let i=0;i<256;i++){wb+=hist[i];const wf=n-wb;if(!wb)continue;if(!wf)break;sb+=i*hist[i];const mb=sb/wb,mf=(sum-sb)/wf,v=wb*wf*(mb-mf)*(mb-mf);if(v>mx){mx=v;t=i;cm=mf-mb}}
-  if(cm<26)return null;
+  if(cm<10)return null;t=Math.max(8,Math.min(247,t+dt));
   const m=new Uint8Array(n),seen=new Uint8Array(n),st=new Int32Array(n);
   for(let i=0;i<n;i++)m[i]=g[i]>t?1:0;
   let best=null;
@@ -251,15 +251,41 @@ function detect(el,vw,vh,w=160){
     }
     if(!best||c.n>best.n)best=c;
   }
-  if(!best||best.n<n*.08||best.n>n*.94)return null;
+  if(!best||best.n<n*.06||best.n>n*.99)return null;
   const q=quadOf(best.pts);
   let ar=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];ar+=a[0]*b[1]-b[0]*a[1]}ar=Math.abs(ar)/2;
-  if(!ar||best.n/ar<.6)return null;
-  for(let i=0;i<4;i++)if(Math.hypot(q[i][0]-q[(i+1)%4][0],q[i][1]-q[(i+1)%4][1])<w*.15)return null;
-  const k=vw/w;return q.map(p=>[(p[0]+.5)*k,(p[1]+.5)*k]);
+  if(!ar||best.n/ar<.4)return null;
+  for(let i=0;i<4;i++)if(Math.hypot(q[i][0]-q[(i+1)%4][0],q[i][1]-q[(i+1)%4][1])<w*.1)return null;
+  const k=vw/w,cx=(q[0][0]+q[1][0]+q[2][0]+q[3][0])/4,cy=(q[0][1]+q[1][1]+q[2][1]+q[3][1])/4,r=Math.max(2,w/50);
+  let cn=0,ps=0,sm=0;
+  for(let e=0;e<4;e++){
+    const a=q[e],b=q[(e+1)%4],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1;let nx=dy/L,ny=-dx/L;
+    if(nx*(cx-a[0])+ny*(cy-a[1])<0){nx=-nx;ny=-ny}
+    for(let i=0;i<10;i++){
+      const t2=(i+.5)/10,px=a[0]+dx*t2,py=a[1]+dy*t2,ix=Math.round(px+nx*r),iy=Math.round(py+ny*r),ox=Math.round(px-nx*r),oy=Math.round(py-ny*r);
+      if(ix<0||iy<0||ox<0||oy<0||ix>=w||ox>=w||iy>=h||oy>=h)continue;
+      const df=g[iy*w+ix]-g[oy*w+ox];cn++;sm+=df;if(df>5)ps++;
+    }
+  }
+  if(cn>=10&&(ps/cn<.55||sm/cn<7))return null;
+  const o=q.map(p=>[(p[0]+.5)*k,(p[1]+.5)*k]);
+  o.sc=(cn>=10?ps/cn*Math.min(1,sm/cn/28):.55)*Math.sqrt(best.n/n);return o;
 }
 
 /* Coins robustes : rectangle d’aire minimale (toute rotation), puis extrêmes diagonaux = perspective */
+const dq=(a,b)=>a.reduce((s,p,i)=>s+Math.hypot(p[0]-b[i][0],p[1]-b[i][1]),0)/4/W;
+/* Multi-seuils + validation des bords + suivi de la feuille déjà détectée */
+function detect(el,vw,vh,w=192){
+  let b=null;
+  for(const dt of [0,-24,24,-48]){
+    const q=detect0(el,vw,vh,w,dt);if(!q)continue;
+    let s=q.sc;
+    if(quad&&el===vid){const d=q.reduce((a,p,i)=>a+Math.hypot(p[0]-quad[i][0],p[1]-quad[i][1]),0)/4/vw;s*=1+Math.max(0,.2-d)*3}
+    if(!b||s>b.s)b={q,s};
+    if(s>.5)break;
+  }
+  return b&&b.q;
+}
 function quadOf(P){
   let bt=0,ba=1e18;
   for(let t=-45;t<45;t+=3){const r=t*Math.PI/180,c=Math.cos(r),s=Math.sin(r);let a=1e9,b=-1e9,e=1e9,f=-1e9;
@@ -273,15 +299,15 @@ function quadOf(P){
 function loop(){
   if(!stream)return;requestAnimationFrame(loop);
   const t=performance.now();K=1-Math.exp(-Math.min(64,t-lt)/50);lt=t;
-  if(!busy&&t-last>66){last=t;step(detect(vid,W,H))}
+  if(!busy&&vid.readyState>1&&t-last>(quad?33:66)){last=t;step(detect(vid,W,H))}
   draw();
 }
 function step(q){
-  if(!q){if(quad&&++miss<=5){stable=Math.max(0,stable-1);return ui()}quad=null;stable=0;miss=0;return ui()}
-  miss=0;if(!quad){quad=q;vib(8)}else{
+  if(!q){pend=null;if(quad&&++miss<=6){stable=Math.max(0,stable-1);return ui()}quad=null;stable=0;miss=0;return ui()}
+  miss=0;if(!quad){if(pend&&dq(pend,q)<.05){quad=q;pend=null;jump=0;vib(8)}else{pend=q;return ui()}}else{
     const mv=q.reduce((s,p,i)=>s+Math.hypot(p[0]-quad[i][0],p[1]-quad[i][1]),0)/4/W;
-    if(mv>.12){quad=q;stable=0}
-    else{quad=quad.map((p,i)=>[p[0]+(q[i][0]-p[0])*.45,p[1]+(q[i][1]-p[1])*.45]);stable=mv<.012?stable+1:Math.max(0,stable-2)}
+    if(mv>.1){if(++jump>=3){quad=q;stable=0;jump=0}else stable=0}
+    else{jump=0;if(mv>.004)quad=quad.map((p,i)=>[p[0]+(q[i][0]-p[0])*.55,p[1]+(q[i][1]-p[1])*.55]);stable=mv<.009?stable+1:Math.max(0,stable-2)}
   }
   ui();
   if(auto&&stable>=N)capture();
@@ -440,4 +466,4 @@ $('#f').onchange=imp;$('#f2').onchange=imp;
 </script>
 </body>
 </html>
-   
+       
