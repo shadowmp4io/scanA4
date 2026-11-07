@@ -103,6 +103,29 @@ html,body{-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-selec
 @keyframes up{from{opacity:0;transform:translateY(26px)}}
 .acts button{border-radius:18px;padding:16px}
 .p{box-shadow:0 8px 24px color-mix(in srgb,var(--acc) 40%,transparent)}
+#busy>*{transform:scale(.9);transition:transform .5s var(--spr)}
+#busy.on>*{transform:none}
+.pbar{width:180px;height:4px;border-radius:4px;background:#fff2;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--cacc);transform-origin:left;transform:scaleX(0);transition:transform .25s linear}
+#intro>*{animation:up .9s var(--ease) both}
+#intro>:nth-child(2){animation-delay:.08s}#intro>:nth-child(3){animation-delay:.16s}#intro>:nth-child(4){animation-delay:.24s}#intro>:nth-child(5){animation-delay:.3s}
+.tools{display:flex;align-items:center;gap:10px;width:min(100%,420px)}
+.tools button{width:46px;height:46px;border-radius:14px;background:var(--card);box-shadow:0 0 0 1px var(--ln);font-size:22px;flex:none;transition:transform .55s var(--spr)}
+.tools button:active{transform:scale(.86);transition-duration:.1s}
+#tilt{flex:1;-webkit-appearance:none;appearance:none;height:30px;background:none;margin:0}
+#tilt::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:var(--ln)}
+#tilt::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;margin-top:-12px;border-radius:50%;background:#fff;box-shadow:0 2px 10px #0004,0 0 0 1px var(--ln)}
+#tilt::-moz-range-track{height:4px;border-radius:4px;background:var(--ln)}
+#tilt::-moz-range-thumb{width:28px;height:28px;border:0;border-radius:50%;background:#fff;box-shadow:0 2px 10px #0004}
+#ed{display:flex;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px calc(env(safe-area-inset-bottom,0px) + 18px);gap:16px;background:var(--bg)}
+#ew{position:relative;display:inline-block;line-height:0}
+#ec{display:block;max-width:92vw;max-height:calc(100dvh - 190px);width:auto;height:auto;border-radius:6px;box-shadow:0 20px 60px #0004,0 0 0 1px var(--ln)}
+#es{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#ep{fill:rgba(61,220,151,.16);stroke:var(--acc);stroke-width:2.5px;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.hd{fill:rgba(61,220,151,.28);stroke:var(--acc);stroke-width:3px;vector-effect:non-scaling-stroke;cursor:grab;touch-action:none;transition:fill .2s}
+.hd:active{fill:rgba(61,220,151,.55)}
+.hint{margin:0;color:var(--mut);font-size:14px}
+.ghost.p2{background:var(--acc);color:#04210f}
 </style>
 </head>
 <body>
@@ -127,12 +150,18 @@ html,body{-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-selec
 </div>
 
 <div id="res" class="scr off">
-  <div class="top"><button class="ghost" id="back">← Refaire</button><b>Document</b><span style="width:84px"></span></div>
+  <div class="top"><button class="ghost" id="back">← Refaire</button><b id="ttl">Document</b><button class="ghost" id="redit">Recadrer</button></div>
   <div class="view"><canvas id="rc"></canvas></div>
+  <div class="tools"><button id="rl" aria-label="Pivoter à gauche">↺</button><input id="tilt" type="range" min="-10" max="10" step=".5" value="0" aria-label="Inclinaison"><button id="rr" aria-label="Pivoter à droite">↻</button></div>
   <div class="chips" id="chips"><i class="thumb"></i><button data-m="0">Original</button><button data-m="1" class="on">Document</button><button data-m="2">N&amp;B</button></div>
-  <div class="acts"><button class="s" id="djpg">Image JPG</button><button class="p" id="dpdf">PDF</button></div>
+  <div class="acts"><button class="s" id="djpg">JPG</button><button class="s" id="dshare">Partager</button><button class="p" id="dpdf">PDF</button></div>
 </div>
-<div id="busy"><div class="spin"></div><div>Redressement en cours…</div></div>
+<div id="ed" class="scr off">
+  <div class="top"><button class="ghost" id="ecan">Annuler</button><b>Recadrer</b><button class="ghost p2" id="eok">Valider</button></div>
+  <div class="view"><div id="ew"><canvas id="ec"></canvas><svg id="es"><polygon id="ep"/></svg></div></div>
+  <p class="hint">Glisse les coins pour épouser la feuille</p>
+</div>
+<div id="busy"><div class="spin"></div><div>Redressement en cours…</div><div class="pbar"><i id="pb"></i></div></div>
 <div id="toast"></div>
 
 <script>
@@ -141,11 +170,11 @@ const vid=$('#v'),ov=$('#ov'),poly=$('#poly'),dots=$('#dots'),pill=$('#pill'),pr
 let miss=0,K=.3,lt=0,lastT='',stream,W=0,H=0,quad=null,shown=null,stable=0,auto=true,busy=false,last=0,base=null,mode=1,locked=false;
 const sc=document.createElement('canvas'),sx=sc.getContext('2d',{willReadFrequently:true});
 for(let i=0;i<4;i++)dots.appendChild(document.createElementNS('http://www.w3.org/2000/svg','circle'));
-const go=n=>{$('#cam').classList.toggle('off',n!=='cam');$('#res').classList.toggle('off',n!=='res')};
+const go=n=>{$('#cam').classList.toggle('off',n!=='cam');$('#res').classList.toggle('off',n!=='res');$('#ed').classList.toggle('off',n!=='ed')};
 const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),1800)};
 
 async function start(){
-  $('#err').textContent='';
+  $('#err').textContent='';$('#go').textContent='Démarrage…';$('#go').style.opacity=.6;
   try{
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:3840},height:{ideal:2160}},audio:false});
     vid.srcObject=stream;await vid.play();
@@ -153,7 +182,7 @@ async function start(){
     try{if(stream.getVideoTracks()[0].getCapabilities().torch)$('#torch').hidden=false}catch(e){}
     W=vid.videoWidth;H=vid.videoHeight;ov.setAttribute('viewBox','0 0 '+W+' '+H);
     $('#intro').classList.add('hide');vib(10);loop();
-  }catch(e){$('#err').textContent='Caméra indisponible ici. Autorise l’accès ou importe une photo.'}
+  }catch(e){$('#go').textContent='Réessayer';$('#go').style.opacity=1;$('#err').textContent='Caméra indisponible ici. Autorise l’accès ou importe une photo.'}
 }
 
 /* Détection : Otsu + plus grande zone claire + 4 coins extrêmes */
@@ -250,12 +279,12 @@ const full=(w,h)=>[[w*.03,h*.03],[w*.97,h*.03],[w*.97,h*.97],[w*.03,h*.97]];
 async function process(src,q){
   busy=true;$('#busy').classList.add('on');
   await new Promise(r=>setTimeout(r,60));
-  base=warp(src,q);mode=1;show();
+  lastSrc=src;lastQ=q.map(p=>p.slice());base=await warp(src,q);mode=1;ang=0;$('#tilt').value=0;$('#ttl').textContent='Document';show();
   $('#busy').classList.remove('on');go('res');
 }
 
 /* Redressement perspective (homographie) + échantillonnage bilinéaire */
-function warp(src,q){
+async function warp(src,q){
   const sw=src.width,sh=src.height,sd=src.getContext('2d').getImageData(0,0,sw,sh).data,L=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
   let w=Math.max(L(q[0],q[1]),L(q[3],q[2])),h=Math.max(L(q[0],q[3]),L(q[1],q[2]));
   const k=Math.min(1,2600/Math.max(w,h));w=Math.max(2,Math.round(w*k));h=Math.max(2,Math.round(h*k));
@@ -263,7 +292,7 @@ function warp(src,q){
   const g=den?(sX*dy2-dx2*sY)/den:0,hh=den?(dx1*sY-sX*dy1)/den:0;
   const a=x1-x0+g*x1,b=x3-x0+hh*x3,d=y1-y0+g*y1,e=y3-y0+hh*y3;
   const out=new ImageData(w,h),o=out.data,mxX=sw-1.001,mxY=sh-1.001;
-  for(let y=0;y<h;y++){const v=y/h;for(let x=0;x<w;x++){
+  for(let y=0;y<h;y++){if(!(y%160)){bar(y/h);await new Promise(r=>requestAnimationFrame(r))}const v=y/h;for(let x=0;x<w;x++){
     const u=x/w,dn=g*u+hh*v+1;let X=(a*u+b*v+x0)/dn,Y=(d*u+e*v+y0)/dn;
     X=X<0?0:X>mxX?mxX:X;Y=Y<0?0:Y>mxY?mxY:Y;
     const ix=X|0,iy=Y|0,fx=X-ix,fy=Y-iy,p=(iy*sw+ix)*4,r=p+sw*4,wa=(1-fx)*(1-fy),wb=fx*(1-fy),wc=(1-fx)*fy,wd=fx*fy,j=(y*w+x)*4;
@@ -286,11 +315,41 @@ function filt(b,m){
   return o;
 }
 function show(){
-  const o=filt(base,mode),c=$('#rc');c.width=o.width;c.height=o.height;c.getContext('2d').putImageData(o,0,0);
+  const o=filt(base,mode);fc.width=o.width;fc.height=o.height;fc.getContext('2d').putImageData(o,0,0);render();
   document.querySelectorAll('#chips button').forEach(b=>b.classList.toggle('on',+b.dataset.m===mode));
   $('.thumb').style.transform='translateX('+mode*100+'%)';
 }
 
+/* Redressement : rotation, inclinaison fine, recadrage manuel */
+const NS='http://www.w3.org/2000/svg',fc=document.createElement('canvas');let lastSrc,lastQ,eq,ang=0;
+const bar=f=>{$('#pb').style.transform='scaleX('+f+')'};
+function render(){
+  const c=$('#rc'),w=fc.width,h=fc.height,x=c.getContext('2d'),r=ang*Math.PI/180,k=Math.cos(Math.abs(r))+Math.max(w/h,h/w)*Math.sin(Math.abs(r));
+  c.width=w;c.height=h;x.fillStyle='#fff';x.fillRect(0,0,w,h);x.translate(w/2,h/2);x.rotate(r);x.scale(k,k);x.drawImage(fc,-w/2,-h/2);
+}
+function rot(d){
+  const s=document.createElement('canvas'),t=document.createElement('canvas'),bw=base.width,bh=base.height;
+  s.width=bw;s.height=bh;s.getContext('2d').putImageData(base,0,0);t.width=bh;t.height=bw;
+  const x=t.getContext('2d');x.translate(bh/2,bw/2);x.rotate(d*Math.PI/2);x.drawImage(s,-bw/2,-bh/2);
+  base=x.getImageData(0,0,bh,bw);show();
+}
+function edit(){
+  if(!lastSrc)return;
+  const c=$('#ec'),s=$('#es');c.width=lastSrc.width;c.height=lastSrc.height;c.getContext('2d').drawImage(lastSrc,0,0);
+  s.setAttribute('viewBox','0 0 '+c.width+' '+c.height);eq=lastQ.map(p=>p.slice());
+  s.querySelectorAll('circle').forEach(n=>n.remove());
+  eq.forEach((p,i)=>{
+    const h=document.createElementNS(NS,'circle');h.setAttribute('r',c.width*.04);h.setAttribute('class','hd');
+    h.onpointerdown=e=>{h.setPointerCapture(e.pointerId);h._d=1;vib(8)};
+    h.onpointermove=e=>{if(!h._d)return;const r=s.getBoundingClientRect();eq[i]=[Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*c.width,Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))*c.height];upd()};
+    h.onpointerup=()=>{h._d=0;vib(5)};s.appendChild(h);
+  });
+  upd();go('ed');
+}
+function upd(){
+  $('#ep').setAttribute('points',eq.map(p=>p.join(',')).join(' '));
+  $('#es').querySelectorAll('circle').forEach((h,i)=>{h.setAttribute('cx',eq[i][0]);h.setAttribute('cy',eq[i][1])});
+}
 /* Export */
 async function save(name,blob){
   try{
@@ -318,6 +377,12 @@ function pdf(jpg,w,h){
 
 /* Événements */
 $('#go').onclick=start;
+$('#rl').onclick=()=>{vib(8);rot(-1)};$('#rr').onclick=()=>{vib(8);rot(1)};
+$('#tilt').oninput=e=>{ang=+e.target.value;if(!ang)vib(6);$('#ttl').textContent=(ang>0?'+':'')+ang.toFixed(1)+'°';render()};
+$('#tilt').onchange=()=>{$('#ttl').textContent='Document'};
+$('#redit').onclick=edit;$('#ecan').onclick=()=>{vib(6);go('res')};$('#eok').onclick=()=>{vib(10);process(lastSrc,eq)};
+$('#dshare').onclick=async()=>{vib(10);try{await navigator.share({files:[new File([await jpgBlob()],stamp()+'.jpg',{type:'image/jpeg'})]})}catch(e){}};
+try{if(!(navigator.canShare&&navigator.canShare({files:[new File(['a'],'a.jpg',{type:'image/jpeg'})]})))$('#dshare').hidden=true}catch(e){$('#dshare').hidden=true}
 $('#shut').onclick=capture;
 $('#torch').onclick=async e=>{const b=e.currentTarget;b.on=!b.on;b.classList.toggle('on',b.on);vib(8);try{await stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:b.on}]})}catch(x){}};
 $('#auto').onclick=e=>{auto=!auto;e.currentTarget.classList.toggle('on',auto);stable=0;ui();vib(8)};
@@ -338,4 +403,4 @@ $('#f').onchange=imp;$('#f2').onchange=imp;
 </script>
 </body>
 </html>
-   
+  
