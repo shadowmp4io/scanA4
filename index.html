@@ -161,6 +161,43 @@ html,body{-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-selec
 .gl{display:flex;align-items:center;justify-content:center;gap:8px;width:min(100%,320px);height:52px;border-radius:18px;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);color:#e8ebee;font-weight:500;font-size:15px;cursor:pointer;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);transition:transform .55s var(--spr),background .3s}
 .gl:active{transform:scale(.95);transition-duration:.1s}
 .pv{display:flex;align-items:center;gap:6px;color:#7f8790;font-size:12.5px}
+/* ===== Liquid glass + fluidité ===== */
+:root{--gl:rgba(255,255,255,.62);--gb:rgba(0,0,0,.07)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--gl:rgba(255,255,255,.07);--gb:rgba(255,255,255,.13)}}
+:root[data-theme="dark"]{--gl:rgba(255,255,255,.07);--gb:rgba(255,255,255,.13)}
+body{letter-spacing:-.011em}
+.stage{contain:layout paint}
+.scr{transition:opacity .5s var(--ease),transform .7s var(--ease)}
+.scr.off{filter:none;visibility:hidden;transform:scale(.96);transition:opacity .45s var(--ease),transform .6s var(--ease),visibility 0s .6s}
+#cam.off{transform:scale(1.05)}
+#res.off,#ed.off{transform:translateY(28px) scale(.96)}
+#intro{transition:opacity .6s var(--ease),transform .8s var(--ease)}
+#intro.hide{filter:none;transform:scale(1.08);visibility:hidden;transition:opacity .6s var(--ease),transform .8s var(--ease),visibility 0s .8s}
+#intro.hide *,#intro.hide::before,#intro.hide::after{animation-play-state:paused}
+#intro::before,#intro::after{filter:none}
+#poly,#poly.lock{filter:none}
+#poly.lock{stroke-width:4px}
+#guide{box-shadow:none;animation:gp 2.6s ease-in-out infinite}
+@keyframes gp{50%{opacity:.4}}
+@keyframes sw{0%{transform:translateY(0)}70%,100%{transform:translateY(190px)}}
+.side,#pill,#torch{background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.03)),rgba(36,40,46,.42);backdrop-filter:blur(22px) saturate(1.8);-webkit-backdrop-filter:blur(22px) saturate(1.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.38),inset 0 0 0 1px rgba(255,255,255,.1),0 6px 24px rgba(0,0,0,.25)}
+#auto.on,#torch.on{background:linear-gradient(180deg,rgba(255,255,255,.35),transparent),var(--cacc)}
+#pill.ok{background:linear-gradient(180deg,rgba(255,255,255,.35),transparent),var(--cacc)}
+#shut i{background:linear-gradient(#fff,#e4e9e6);box-shadow:0 4px 18px rgba(0,0,0,.35),inset 0 -2px 4px rgba(0,0,0,.08)}
+#cam.has #shut i{background:linear-gradient(#fff,#cdf5e1)}
+.trk{stroke:rgba(255,255,255,.55)}
+.ghost,.tools button,.chips,.acts .s,.gl{background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0)),var(--gl);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px var(--gb),0 8px 24px rgba(0,0,0,.08);backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8)}
+.gl{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.04)),rgba(255,255,255,.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 0 0 1px rgba(255,255,255,.12)}
+.p,.ghost.p2{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 86%,#fff),var(--acc));color:#04210f;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 10px 28px color-mix(in srgb,var(--acc) 40%,transparent)}
+.thumb{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 85%,#fff),var(--acc));box-shadow:0 6px 18px color-mix(in srgb,var(--acc) 45%,transparent),inset 0 1px 0 rgba(255,255,255,.5)}
+.thumb.mv{animation:stretch .55s var(--ease)}
+@keyframes stretch{40%{scale:1.16 .9}}
+#res{background:radial-gradient(120% 60% at 50% 0%,color-mix(in srgb,var(--acc) 14%,var(--bg)),transparent 70%),radial-gradient(90% 50% at 100% 100%,color-mix(in srgb,#5b7cff 12%,transparent),transparent),var(--bg)}
+#rc{box-shadow:0 30px 80px -20px rgba(0,0,0,.45),0 0 0 1px var(--gb)}
+#ttl{font-variant-numeric:tabular-nums}
+.hd{fill:rgba(255,255,255,.2);stroke:#fff}
+#toast{background:rgba(30,32,36,.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
@@ -204,7 +241,7 @@ html,body{-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-selec
 <script>
 const $=s=>document.querySelector(s),vib=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}},N=22;
 const vid=$('#v'),ov=$('#ov'),poly=$('#poly'),dots=$('#dots'),pill=$('#pill'),prog=$('#prog');
-let pend=null,jump=0,miss=0,K=.3,lt=0,lastT='',stream,W=0,H=0,quad=null,shown=null,stable=0,auto=true,busy=false,last=0,base=null,mode=1,locked=false;
+let lastSig='',pend=null,jump=0,miss=0,K=.3,lt=0,lastT='',stream,W=0,H=0,quad=null,shown=null,stable=0,auto=true,busy=false,last=0,base=null,mode=1,locked=false;
 const sc=document.createElement('canvas'),sx=sc.getContext('2d',{willReadFrequently:true});
 for(let i=0;i<4;i++)dots.appendChild(document.createElementNS('http://www.w3.org/2000/svg','circle'));
 const go=n=>{$('#cam').classList.toggle('off',n!=='cam');$('#res').classList.toggle('off',n!=='res');$('#ed').classList.toggle('off',n!=='ed')};
@@ -322,9 +359,9 @@ function ui(){
   prog.style.strokeDashoffset=238.76*(1-(quad&&auto?Math.min(1,stable/N):0));
 }
 function draw(){
-  if(!quad){shown=null;poly.style.opacity=0;dots.style.opacity=0;return}
+  if(!quad){shown=null;lastSig='';poly.style.opacity=0;dots.style.opacity=0;return}
   shown=shown?shown.map((p,i)=>[p[0]+(quad[i][0]-p[0])*K,p[1]+(quad[i][1]-p[1])*K]):quad.map(p=>p.slice());
-  poly.setAttribute('points',shown.map(p=>p.join(',')).join(' '));poly.style.opacity=1;dots.style.opacity=1;
+  const sig=shown.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');if(sig===lastSig)return;lastSig=sig;poly.setAttribute('points',sig);poly.style.opacity=1;dots.style.opacity=1;
   [...dots.children].forEach((c,i)=>{c.setAttribute('cx',shown[i][0]);c.setAttribute('cy',shown[i][1]);c.setAttribute('r',W*.009)});
 }
 
@@ -380,7 +417,7 @@ function filt(b,m){
 function show(){
   const o=filt(base,mode);fc.width=o.width;fc.height=o.height;fc.getContext('2d').putImageData(o,0,0);render();
   document.querySelectorAll('#chips button').forEach(b=>b.classList.toggle('on',+b.dataset.m===mode));
-  $('.thumb').style.transform='translateX('+mode*100+'%)';
+  $('.thumb').style.transform='translateX('+mode*100+'%)';const th=$('.thumb');th.classList.remove('mv');void th.offsetWidth;th.classList.add('mv');
 }
 
 /* Redressement : rotation, inclinaison fine, recadrage manuel */
@@ -466,4 +503,4 @@ $('#f').onchange=imp;$('#f2').onchange=imp;
 </script>
 </body>
 </html>
-       
+  
