@@ -286,6 +286,19 @@ html{color-scheme:light dark}
 button:focus-visible,label:focus-within{outline:2px solid var(--acc);outline-offset:2px}
 @media (hover:hover){.ghost:hover,.it:hover,.acts button:hover,.tools button:hover,.side:hover{filter:brightness(1.1)}}
 @supports not (backdrop-filter:blur(1px)){.pop,.dock,.side,#pill{background:var(--card)}}
+.snp{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:4;pointer-events:none;transform:scale(.94);filter:brightness(.85);animation:snp .45s var(--ease);transition:opacity .5s var(--ease),transform .6s var(--ease)}
+@keyframes snp{from{transform:scale(1);filter:brightness(1.4)}}
+.snp.out{opacity:0;transform:scale(.86)}
+#shut.cap i{animation:sht .45s var(--ease)}
+@keyframes sht{35%{transform:scale(.78)}}
+@keyframes fl{0%{opacity:.6}100%{opacity:0}}
+#ed:not(.off) .top,#ed:not(.off) .gp,#ed:not(.off) .hint{animation:up .7s var(--ease) both}
+#ed:not(.off) .gp{animation-delay:.1s}
+#ed:not(.off) #ew{animation:pop2 .8s var(--spr)}
+#ed:not(.off) #ew.sw2{animation:sw2 .6s var(--spr)}
+@keyframes sw2{from{opacity:.2;transform:perspective(900px) rotateX(10deg) scale(.93)}}
+.hd{transform-box:fill-box;transform-origin:center;animation:hdp .55s var(--spr) both}
+@keyframes hdp{from{transform:scale(.3);opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -478,6 +491,7 @@ async function capture(){
   if(busy)return;busy=true;vib([25,40,25]);poly.classList.add('snap');setTimeout(()=>poly.classList.remove('snap'),280);
   const f=$('#flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');
   const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(vid,0,0);
+  {const n=document.createElement('canvas');n.className='snp';n.width=640;n.height=Math.round(640*H/W);n.getContext('2d').drawImage(c,0,0,n.width,n.height);$('#cam').appendChild(n);const sb=$('#shut');sb.classList.add('cap');setTimeout(()=>sb.classList.remove('cap'),450)}
   let q=quad?quad.map(p=>p.slice()):full(W,H);
   const hq=detect(c,W,H,480);
   if(hq&&(!quad||hq.reduce((s,p,i)=>s+Math.hypot(p[0]-q[i][0],p[1]-q[i][1]),0)/4/W<.05))q=hq;
@@ -489,7 +503,7 @@ async function process(src,q){
   busy=true;$('#busy').classList.add('on');
   await new Promise(r=>setTimeout(r,60));
   strokes=[];hs=[];lastSrc=src;lastQ=q.map(p=>p.slice());base=await warp(src,q);mode=1;ang=0;{const th=$('.thumb');th.style.transition='none';th.style.transform='translateX(100%)';rl.classList.add('dg');rl.style.setProperty('--x','0px');void th.offsetWidth;th.style.transition='';rl.classList.remove('dg');tm=1}$('#ttl').textContent='Document';show();
-  $('#busy').classList.remove('on');go('res');
+  $('#busy').classList.remove('on');go('res');document.querySelectorAll('.snp').forEach(n=>{n.classList.add('out');setTimeout(()=>n.remove(),700)});
 }
 
 /* Redressement perspective (homographie) + échantillonnage bilinéaire */
@@ -548,7 +562,7 @@ function edit(){
   s.setAttribute('viewBox','0 0 '+c.width+' '+c.height);eq=lib?libQ.map(p=>p.slice()):lastQ.map(p=>p.slice());
   s.querySelectorAll('circle').forEach(n=>n.remove());
   eq.forEach((p,i)=>{
-    const h=document.createElementNS(NS,'circle');h.setAttribute('r',c.width*.04);h.setAttribute('class','hd');
+    const h=document.createElementNS(NS,'circle');h.setAttribute('r',c.width*.04);h.setAttribute('class','hd');h.style.animationDelay=i*45+'ms';
     h.onpointerdown=e=>{h.setPointerCapture(e.pointerId);h._d=1;vib(8);loupe(e,c,eq[i])};
     h.onpointermove=e=>{if(!h._d)return;const r=s.getBoundingClientRect();eq[i]=[Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*c.width,Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))*c.height];upd();loupe(e,c,eq[i])};
     h.onpointerup=()=>{h._d=0;vib(5);$('#lp').classList.remove('on')};s.appendChild(h);
@@ -827,7 +841,7 @@ window.autoDeskew=()=>{
   },40);
 };
 $('#ereset').onclick=()=>{vib(8);eq=lib?libQ.map(p=>p.slice()):lastQ.map(p=>p.slice());upd()};
-$('#elib').onclick=()=>{lib=!lib;$('#elib').classList.toggle('p2',lib);vib(10);edit()};
+$('#elib').onclick=()=>{lib=!lib;$('#elib').classList.toggle('p2',lib);vib(10);const w=$('#ew');w.classList.remove('sw2');void w.offsetWidth;w.classList.add('sw2');edit()};
 window.addEventListener('resize',fit);
 $('#redit').onclick=()=>{lib=false;$('#elib').classList.remove('p2');edit()};$('#ecan').onclick=()=>{vib(6);go('res')};$('#eok').onclick=()=>{vib(10);if(lib)bakeLib();else process(lastSrc,eq)};
 $('#dshare').onclick=async()=>{vib(10);try{await navigator.share({files:[new File([await jpgBlob()],stamp()+'.jpg',{type:'image/jpeg'})]})}catch(e){}};
@@ -835,7 +849,7 @@ try{if(!(navigator.canShare&&navigator.canShare({files:[new File(['a'],'a.jpg',{
 $('#shut').onclick=capture;
 $('#torch').onclick=async e=>{const b=e.currentTarget;b.on=!b.on;b.classList.toggle('on',b.on);vib(8);try{await stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:b.on}]})}catch(x){}};
 $('#auto').onclick=e=>{auto=!auto;e.currentTarget.classList.toggle('on',auto);stable=0;ui();vib(8)};
-$('#back').onclick=()=>{vib(8);if(tool)$('#dn').click();if(pnl)closePnl();busy=false;stable=0;go('cam');if(!stream)$('#intro').classList.remove('hide')};
+$('#back').onclick=()=>{vib(8);if(tool)$('#dn').click();if(pnl)closePnl();document.querySelectorAll('.snp').forEach(n=>n.remove());busy=false;stable=0;go('cam');if(!stream)$('#intro').classList.remove('hide')};
 $('#chips').onclick=e=>{const b=e.target.closest('button');if(!b||+b.dataset.m===mode)return;mode=+b.dataset.m;vib(6);show()};
 $('#djpg').onclick=async()=>{vib(10);save(stamp()+'.jpg',await jpgBlob())};
 $('#dpdf').onclick=async()=>{vib(10);const c=$('#rc'),j=new Uint8Array(await (await jpgBlob()).arrayBuffer());save(stamp()+'.pdf',pdf(j,c.width,c.height))};
