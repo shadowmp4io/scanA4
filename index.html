@@ -308,6 +308,10 @@ button:focus-visible,label:focus-within{outline:2px solid var(--acc);outline-off
 .cfi .ic{width:28px;height:28px}
 #cf b{font-size:18px}#cf p{margin:0;font-size:14px;line-height:1.45;color:var(--mut)}
 #cf .ac{width:100%;margin-top:6px}#cf .it.sm{height:44px}
+#cf::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:inherit;background:linear-gradient(100deg,rgba(90,130,255,.6),rgba(255,70,80,0) 42%),linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0)),#e5484d;box-shadow:inset 0 1px 0 rgba(255,255,255,.5);opacity:1;transition:opacity .45s var(--ease) .05s}
+.pw.open #cf::before{opacity:0}
+#cf::after{content:"Default";position:absolute;z-index:2;left:var(--lx,50%);top:var(--ly,50%);transform:translate(-50%,-50%);color:#fff;font-weight:600;font-size:15px;pointer-events:none;opacity:1;transition:opacity .2s .35s}
+.pw.open #cf::after{opacity:0;transition-delay:0s}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -781,10 +785,14 @@ $('#opdk').innerHTML=ICO.dsk+'<span>Redresser auto</span>';$('#opfl').innerHTML=
 $('#opdk').onclick=()=>{vib(8);autoDeskew()};$('#opfl').onclick=()=>{vib(8);doFlip()};
 $('#opd').onclick=$('#abd').onclick=()=>{vib(8);closePnl()};
 $('#opdf').innerHTML=ICO.rst+'<span>Default</span>';
-function openCf(){const w=Math.min(320,innerWidth-48);vib(10);$('#dim').classList.add('on');openP(WR.cf,$('#opdf').getBoundingClientRect(),0,{left:(innerWidth-w)/2,width:w,bottom:innerHeight/2+120})}
-function shutCf(){$('#dim').classList.remove('on');closeP(WR.cf,$('#opdf').getBoundingClientRect())}
+function openCf(){
+  const b=$('#opdf'),T=b.getBoundingClientRect(),w=Math.min(320,innerWidth-48);vib(10);$('#dim').classList.add('on');
+  openP(WR.cf,T,0,{left:(innerWidth-w)/2,width:w,bottom:innerHeight/2+120});
+  const P=WR.cf.getBoundingClientRect();WR.cf.style.setProperty('--lx',(T.left+T.width/2-P.left)+'px');WR.cf.style.setProperty('--ly',(T.top+T.height/2-P.top)+'px');b.style.visibility='hidden';
+}
+function shutCf(){$('#dim').classList.remove('on');closeP(WR.cf,$('#opdf').getBoundingClientRect());setTimeout(()=>{$('#opdf').style.visibility=''},600)}
 $('#opdf').onclick=openCf;$('#cfn').onclick=$('#dim').onclick=()=>{vib(6);shutCf()};
-$('#cfy').onclick=()=>{vib([10,30,10]);shutCf();setTimeout(()=>{closePnl();if(orig)process(orig.s,orig.q);toast('Photo remise par défaut')},450)};
+$('#cfy').onclick=()=>{vib([10,30,10]);shutCf();setTimeout(closePnl,660);setTimeout(()=>{if(orig)process(orig.s,orig.q);toast('Photo remise par défaut')},1050)};
 $('#iw').onclick=()=>{iw=!iw;vib(8);$('#iw').classList.toggle('on',iw);toast(iw?'Gomme du crayon : touche un trait':'Crayon')};
 /* ===== Zoom : pincer pour zoomer, double-tap pour réinitialiser ===== */
 let Z={s:1,x:0,y:0},G=null,tU=0,tP=[0,0],tB=[];const PT=new Map(),cl=(v,l)=>Math.max(-l,Math.min(l,v));
@@ -888,3 +896,4 @@ $('#f').onchange=imp;$('#f2').onchange=imp;
 </script>
 </body>
 </html>
+ 
