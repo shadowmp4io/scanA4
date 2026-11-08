@@ -312,6 +312,10 @@ button:focus-visible,label:focus-within{outline:2px solid var(--acc);outline-off
 .pw.open #cf::before{opacity:0}
 #cf::after{content:"Default";position:absolute;z-index:2;left:var(--lx,50%);top:var(--ly,50%);transform:translate(-50%,-50%);color:#fff;font-weight:600;font-size:15px;pointer-events:none;opacity:1;transition:opacity .2s .35s}
 .pw.open #cf::after{opacity:0;transition-delay:0s}
+#cfw .pop,#cf{position:absolute;inset:0;border-radius:inherit;overflow:hidden;padding:0;display:block}
+#cfw .ps{border-radius:inherit}
+.cfc{width:var(--cw);height:100%;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:0 18px;text-align:center}
+.pw.open #cf>.cfc{transition-delay:.24s}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -372,11 +376,11 @@ button:focus-visible,label:focus-within{outline:2px solid var(--acc);outline-off
   <div class="abm"><span>Powered By <i>Shadow</i></span><span>V1.5.7.96</span></div>
 </div></div>
 <div id="dim"></div>
-<div class="pw" id="cfw"><i class="ps"></i><div class="pop" id="cf">
+<div class="pw" id="cfw"><i class="ps"></i><div class="pop" id="cf"><div class="cfc">
   <div class="cfi"><svg class="ic" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg></div>
   <b>Tout remettre par défaut ?</b>
   <p>La photo reviendra exactement comme au moment où tu l’as prise : rotation, recadrage, filtres et annotations seront annulés.</p>
-  <div class="ac"><button class="it sm" id="cfn">Annuler</button><button class="it sm dflt" id="cfy">Remettre</button></div>
+  <div class="ac"><button class="it sm" id="cfn">Annuler</button><button class="it sm dflt" id="cfy">Remettre</button></div></div>
 </div></div>
 <div id="toast"></div>
 
@@ -677,7 +681,7 @@ const SV=p=>'<svg class="ic" viewBox="0 0 24 24">'+p+'</svg>',
 ICO={pen:SV('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>'),era:SV('<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7M5 11l9 9"/>'),dsk:SV('<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/><path d="m14 7 3 3M5 6v4M19 14v4M10 2v2M7 8H3M21 16h-4M11 3H9"/>'),rst:SV('<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"/>'),ops:SV('<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'),abt:SV('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'),wipe:SV('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m14 16 6 6M20 16l-6 6"/>'),flp:SV('<path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 2v2M12 8v2M12 14v2M12 20v2"/>'),pip:SV('<path d="m2 22 1-1h3l9-9M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/>')},
 PC=['#111827','#1d4ed8','#dc2626','#16a34a','#f59e0b','#9333ea','pip'],CC=['paper','#ffffff','#f5f1e6','#111827','pip'],
 WR={mn:$('#mnw'),tp:$('#tpw'),op:$('#opw'),ab:$('#abw'),cf:$('#cfw')},rcv=$('#rc'),col={pen:'#1d4ed8',cover:'paper'},sz={pen:6,cover:22};
-let RT=[0,1],lib=false,libSrc=null,libQ=null,strokes=[],tool=null,cur=null,home=null,pip=false,paper='#fff',lk=false,iw=false,pnl=null,orig=null,hs=[],sess=[],pd=false,rq2=0;
+let RT=[0,1],lib=false,libSrc=null,libQ=null,strokes=[],tool=null,cur=null,home=null,pip=false,paper='#fff',lk=false,iw=false,pnl=null,orig=null,cfa=null,hs=[],sess=[],pd=false,rq2=0;
 const lpv=$('#lp2');
 function hitInk(p,sv){const w=rcv.width,h=rcv.height,m=Math.min(w,h),R=sv*m/2;return strokes.some(s=>s.k==='ink'&&s.p.some(q=>Math.hypot((q[0]-p[0])*w,(q[1]-p[1])*h)<R+s.s*m/2))}
 function wipe(q){
@@ -785,14 +789,22 @@ $('#opdk').innerHTML=ICO.dsk+'<span>Redresser auto</span>';$('#opfl').innerHTML=
 $('#opdk').onclick=()=>{vib(8);autoDeskew()};$('#opfl').onclick=()=>{vib(8);doFlip()};
 $('#opd').onclick=$('#abd').onclick=()=>{vib(8);closePnl()};
 $('#opdf').innerHTML=ICO.rst+'<span>Default</span>';
+const CFH=280;
+function cfRect(){const w=Math.min(320,innerWidth-48);return{left:(innerWidth-w)/2,top:(innerHeight-CFH)/2,width:w,height:CFH}}
+function cfAnim(w,a,b,ra,rb,d){return w.animate([{left:a.left+'px',top:a.top+'px',width:a.width+'px',height:a.height+'px',borderRadius:ra+'px'},{left:b.left+'px',top:b.top+'px',width:b.width+'px',height:b.height+'px',borderRadius:rb+'px'}],{duration:d,easing:'cubic-bezier(.32,.72,0,1)',fill:'forwards'})}
 function openCf(){
-  const b=$('#opdf'),T=b.getBoundingClientRect(),w=Math.min(320,innerWidth-48);vib(10);$('#dim').classList.add('on');
-  openP(WR.cf,T,0,{left:(innerWidth-w)/2,width:w,bottom:innerHeight/2+120});
-  const P=WR.cf.getBoundingClientRect();WR.cf.style.setProperty('--lx',(T.left+T.width/2-P.left)+'px');WR.cf.style.setProperty('--ly',(T.top+T.height/2-P.top)+'px');b.style.visibility='hidden';
+  const b=$('#opdf'),T=b.getBoundingClientRect(),R=cfRect(),w=WR.cf;vib(10);$('#dim').classList.add('on');
+  Object.assign(w.style,{left:R.left+'px',top:R.top+'px',width:R.width+'px',height:R.height+'px',bottom:'auto'});w.style.setProperty('--cw',R.width+'px');
+  if(cfa)cfa.cancel();w.classList.add('vis','open');b.style.visibility='hidden';cfa=cfAnim(w,T,R,16,26,640);
 }
-function shutCf(){$('#dim').classList.remove('on');closeP(WR.cf,$('#opdf').getBoundingClientRect());setTimeout(()=>{$('#opdf').style.visibility=''},600)}
+function shutCf(){
+  const w=WR.cf,b=$('#opdf'),T=b.getBoundingClientRect(),C=w.getBoundingClientRect();
+  $('#dim').classList.remove('on');w.classList.remove('open');if(cfa)cfa.cancel();
+  const an=cfa=cfAnim(w,C,T,26,16,540);
+  an.onfinish=()=>{w.classList.remove('vis');an.cancel();if(cfa===an)cfa=null;b.style.visibility=''};
+}
 $('#opdf').onclick=openCf;$('#cfn').onclick=$('#dim').onclick=()=>{vib(6);shutCf()};
-$('#cfy').onclick=()=>{vib([10,30,10]);shutCf();setTimeout(closePnl,660);setTimeout(()=>{if(orig)process(orig.s,orig.q);toast('Photo remise par défaut')},1050)};
+$('#cfy').onclick=()=>{vib([10,30,10]);shutCf();setTimeout(closePnl,700);setTimeout(()=>{if(orig)process(orig.s,orig.q);toast('Photo remise par défaut')},1100)};
 $('#iw').onclick=()=>{iw=!iw;vib(8);$('#iw').classList.toggle('on',iw);toast(iw?'Gomme du crayon : touche un trait':'Crayon')};
 /* ===== Zoom : pincer pour zoomer, double-tap pour réinitialiser ===== */
 let Z={s:1,x:0,y:0},G=null,tU=0,tP=[0,0],tB=[];const PT=new Map(),cl=(v,l)=>Math.max(-l,Math.min(l,v));
@@ -896,4 +908,3 @@ $('#f').onchange=imp;$('#f2').onchange=imp;
 </script>
 </body>
 </html>
- 
