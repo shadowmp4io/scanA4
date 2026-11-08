@@ -299,6 +299,15 @@ button:focus-visible,label:focus-within{outline:2px solid var(--acc);outline-off
 @keyframes sw2{from{opacity:.2;transform:perspective(900px) rotateX(10deg) scale(.93)}}
 .hd{transform-box:fill-box;transform-origin:center;animation:hdp .55s var(--spr) both}
 @keyframes hdp{from{transform:scale(.3);opacity:0}}
+.dflt{color:#fff;background:linear-gradient(100deg,rgba(90,130,255,.6),rgba(255,70,80,0) 42%),linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0)),#e5484d;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.12),0 8px 22px rgba(229,72,77,.35)}
+#op .dflt{height:46px;justify-content:center}
+#dim{position:fixed;inset:0;z-index:19;background:rgba(0,0,0,.38);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
+#dim.on{opacity:1;pointer-events:auto}
+#cf{padding:20px 18px 16px;gap:10px;text-align:center;align-items:center;background:linear-gradient(180deg,rgba(255,255,255,.2),transparent),color-mix(in srgb,var(--card) 94%,transparent)}
+.cfi{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;color:#fff;background:linear-gradient(100deg,rgba(90,130,255,.6),rgba(255,70,80,0) 45%),#e5484d;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 10px 26px rgba(229,72,77,.4)}
+.cfi .ic{width:28px;height:28px}
+#cf b{font-size:18px}#cf p{margin:0;font-size:14px;line-height:1.45;color:var(--mut)}
+#cf .ac{width:100%;margin-top:6px}#cf .it.sm{height:44px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -351,11 +360,19 @@ button:focus-visible,label:focus-within{outline:2px solid var(--acc);outline-off
 <div class="pw" id="opw"><i class="ps"></i><div class="pop" id="op">
   <div class="th"><b>Outils</b><button class="it sm" id="opd">Terminé</button></div>
   <div class="ac"><button class="it" id="opdk"></button><button class="it" id="opfl"></button></div>
+  <button class="it dflt" id="opdf"></button>
 </div></div>
 <div class="pw" id="abw"><i class="ps"></i><div class="pop" id="ab">
   <div class="th"><b>About</b><button class="it sm pri" id="abd">Fermer</button></div>
   <div class="abi"><div class="abl"><svg class="ic" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M8 12h8"/></svg></div><div><b>Scanner</b><p>Scanne tes documents avec la caméra : le cadre se colle sur la feuille, elle est redressée automatiquement, puis exportée en JPG ou PDF. Annote, gomme, zoome et recadre en 3D.</p></div></div>
   <div class="abm"><span>Powered By <i>Shadow</i></span><span>V1.5.7.96</span></div>
+</div></div>
+<div id="dim"></div>
+<div class="pw" id="cfw"><i class="ps"></i><div class="pop" id="cf">
+  <div class="cfi"><svg class="ic" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg></div>
+  <b>Tout remettre par défaut ?</b>
+  <p>La photo reviendra exactement comme au moment où tu l’as prise : rotation, recadrage, filtres et annotations seront annulés.</p>
+  <div class="ac"><button class="it sm" id="cfn">Annuler</button><button class="it sm dflt" id="cfy">Remettre</button></div>
 </div></div>
 <div id="toast"></div>
 
@@ -495,14 +512,14 @@ async function capture(){
   let q=quad?quad.map(p=>p.slice()):full(W,H);
   const hq=detect(c,W,H,480);
   if(hq&&(!quad||hq.reduce((s,p,i)=>s+Math.hypot(p[0]-q[i][0],p[1]-q[i][1]),0)/4/W<.05))q=hq;
-  stable=0;ui();await process(c,q);
+  stable=0;ui();await process(c,q,1);
 }
 const full=(w,h)=>[[w*.03,h*.03],[w*.97,h*.03],[w*.97,h*.97],[w*.03,h*.97]];
 
-async function process(src,q){
+async function process(src,q,fr){
   busy=true;$('#busy').classList.add('on');
   await new Promise(r=>setTimeout(r,60));
-  strokes=[];hs=[];lastSrc=src;lastQ=q.map(p=>p.slice());base=await warp(src,q);mode=1;ang=0;{const th=$('.thumb');th.style.transition='none';th.style.transform='translateX(100%)';rl.classList.add('dg');rl.style.setProperty('--x','0px');void th.offsetWidth;th.style.transition='';rl.classList.remove('dg');tm=1}$('#ttl').textContent='Document';show();
+  if(fr)orig={s:src,q:q.map(p=>p.slice())};strokes=[];hs=[];lastSrc=src;lastQ=q.map(p=>p.slice());base=await warp(src,q);mode=1;ang=0;{const th=$('.thumb');th.style.transition='none';th.style.transform='translateX(100%)';rl.classList.add('dg');rl.style.setProperty('--x','0px');void th.offsetWidth;th.style.transition='';rl.classList.remove('dg');tm=1}$('#ttl').textContent='Document';show();
   $('#busy').classList.remove('on');go('res');document.querySelectorAll('.snp').forEach(n=>{n.classList.add('out');setTimeout(()=>n.remove(),700)});
 }
 
@@ -653,10 +670,10 @@ function upd(){if(lib)libDraw();
 }
 /* ===== Menu ⋯ + crayon / gomme (morph depuis le bouton) ===== */
 const SV=p=>'<svg class="ic" viewBox="0 0 24 24">'+p+'</svg>',
-ICO={pen:SV('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>'),era:SV('<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7M5 11l9 9"/>'),dsk:SV('<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/><path d="m14 7 3 3M5 6v4M19 14v4M10 2v2M7 8H3M21 16h-4M11 3H9"/>'),ops:SV('<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'),abt:SV('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'),wipe:SV('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m14 16 6 6M20 16l-6 6"/>'),flp:SV('<path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 2v2M12 8v2M12 14v2M12 20v2"/>'),pip:SV('<path d="m2 22 1-1h3l9-9M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/>')},
+ICO={pen:SV('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>'),era:SV('<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7M5 11l9 9"/>'),dsk:SV('<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/><path d="m14 7 3 3M5 6v4M19 14v4M10 2v2M7 8H3M21 16h-4M11 3H9"/>'),rst:SV('<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"/>'),ops:SV('<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'),abt:SV('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'),wipe:SV('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m14 16 6 6M20 16l-6 6"/>'),flp:SV('<path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 2v2M12 8v2M12 14v2M12 20v2"/>'),pip:SV('<path d="m2 22 1-1h3l9-9M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/>')},
 PC=['#111827','#1d4ed8','#dc2626','#16a34a','#f59e0b','#9333ea','pip'],CC=['paper','#ffffff','#f5f1e6','#111827','pip'],
-WR={mn:$('#mnw'),tp:$('#tpw'),op:$('#opw'),ab:$('#abw')},rcv=$('#rc'),col={pen:'#1d4ed8',cover:'paper'},sz={pen:6,cover:22};
-let RT=[0,1],lib=false,libSrc=null,libQ=null,strokes=[],tool=null,cur=null,home=null,pip=false,paper='#fff',lk=false,iw=false,pnl=null,hs=[],sess=[],pd=false,rq2=0;
+WR={mn:$('#mnw'),tp:$('#tpw'),op:$('#opw'),ab:$('#abw'),cf:$('#cfw')},rcv=$('#rc'),col={pen:'#1d4ed8',cover:'paper'},sz={pen:6,cover:22};
+let RT=[0,1],lib=false,libSrc=null,libQ=null,strokes=[],tool=null,cur=null,home=null,pip=false,paper='#fff',lk=false,iw=false,pnl=null,orig=null,hs=[],sess=[],pd=false,rq2=0;
 const lpv=$('#lp2');
 function hitInk(p,sv){const w=rcv.width,h=rcv.height,m=Math.min(w,h),R=sv*m/2;return strokes.some(s=>s.k==='ink'&&s.p.some(q=>Math.hypot((q[0]-p[0])*w,(q[1]-p[1])*h)<R+s.s*m/2))}
 function wipe(q){
@@ -763,6 +780,11 @@ function closePnl(){const w=pnl;if(!w)return;pnl=null;const b=$('#dsk'),T=b.getB
 $('#opdk').innerHTML=ICO.dsk+'<span>Redresser auto</span>';$('#opfl').innerHTML=ICO.flp+'<span>Inverser</span>';
 $('#opdk').onclick=()=>{vib(8);autoDeskew()};$('#opfl').onclick=()=>{vib(8);doFlip()};
 $('#opd').onclick=$('#abd').onclick=()=>{vib(8);closePnl()};
+$('#opdf').innerHTML=ICO.rst+'<span>Default</span>';
+function openCf(){const w=Math.min(320,innerWidth-48);vib(10);$('#dim').classList.add('on');openP(WR.cf,$('#opdf').getBoundingClientRect(),0,{left:(innerWidth-w)/2,width:w,bottom:innerHeight/2+120})}
+function shutCf(){$('#dim').classList.remove('on');closeP(WR.cf,$('#opdf').getBoundingClientRect())}
+$('#opdf').onclick=openCf;$('#cfn').onclick=$('#dim').onclick=()=>{vib(6);shutCf()};
+$('#cfy').onclick=()=>{vib([10,30,10]);shutCf();setTimeout(()=>{closePnl();if(orig)process(orig.s,orig.q);toast('Photo remise par défaut')},450)};
 $('#iw').onclick=()=>{iw=!iw;vib(8);$('#iw').classList.toggle('on',iw);toast(iw?'Gomme du crayon : touche un trait':'Crayon')};
 /* ===== Zoom : pincer pour zoomer, double-tap pour réinitialiser ===== */
 let Z={s:1,x:0,y:0},G=null,tU=0,tP=[0,0],tB=[];const PT=new Map(),cl=(v,l)=>Math.max(-l,Math.min(l,v));
@@ -858,7 +880,7 @@ async function imp(e){
   try{
     const bm=await createImageBitmap(f,{imageOrientation:'from-image'}),k=Math.min(1,4096/Math.max(bm.width,bm.height)),c=document.createElement('canvas');
     c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
-    await process(c,detect(c,c.width,c.height,480)||full(c.width,c.height));
+    await process(c,detect(c,c.width,c.height,480)||full(c.width,c.height),1);
   }catch(x){busy=false;toast('Image illisible')}
   e.target.value='';
 }
